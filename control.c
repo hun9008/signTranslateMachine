@@ -231,12 +231,6 @@ void* get_error_code(void *arg){
   int str_len;
   char msg[2];
   char error;
-  if (GPIOExport(SOUND) == -1) {
-    //return 1;
-  }
-  if (GPIODirection(SOUND, OUT) == -1) {
-    //return 1;
-  }
   while(1){
     printf("do\n");
     str_len = read(sock, msg, 1);
