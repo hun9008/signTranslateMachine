@@ -15,7 +15,7 @@
 #define LOW 0
 #define HIGH 1
 
-#define SOUND 13
+#define SOUND 0 //gpio18
 #define INPUT 4
 #define PIN 20
 #define POUT 21
@@ -23,10 +23,101 @@
 #define POUT2 24
 #define VALUE_MAX 40
 #define DIRECTION_MAX 40
+#define P_VALUE_MAX 256
+#define P_DIRECTION_MAX 256
 
 #define RED 17
 #define GREEN 27
 #define BLUE 22
+static int PWMExport(int pwmnum) {
+#define BUFFER_MAX 3
+  char buffer[BUFFER_MAX];
+  int fd, byte;
+
+  // TODO: Enter the export path.
+  fd = open("/sys/class/pwm/pwmchip0/export", O_WRONLY);
+  if (-1 == fd) {
+    fprintf(stderr, "Failed to open export for export!\n");
+    return (-1);
+  }
+
+  byte = snprintf(buffer, BUFFER_MAX, "%d", pwmnum);
+  write(fd, buffer, byte);
+  close(fd);
+
+  sleep(1);
+
+  return (0);
+}
+
+static int PWMEnable(int pwmnum) {
+  static const char s_enable_str[] = "1";
+
+  char path[P_DIRECTION_MAX];
+  int fd;
+
+  // TODO: Enter the enable path.
+  snprintf(path, P_DIRECTION_MAX, "/sys/class/pwm/pwmchip0/pwm0/enable", pwmnum);
+  fd = open(path, O_WRONLY);
+  if (-1 == fd) {
+    fprintf(stderr, "Failed to open in enable!\n");
+    return -1;
+  }
+
+  write(fd, s_enable_str, strlen(s_enable_str));
+  close(fd);
+
+  return (0);
+}
+
+
+static int PWMWritePeriod(int pwmnum, int value) {
+  char s_value_str[P_VALUE_MAX];
+  char path[P_VALUE_MAX];
+  int fd, byte;
+
+  // TODO: Enter the period path.
+  snprintf(path, P_VALUE_MAX, "/sys/class/pwm/pwmchip0/pwm0/period", pwmnum);
+  fd = open(path, O_WRONLY);
+  if (-1 == fd) {
+    fprintf(stderr, "Failed to open in period!\n");
+    return (-1);
+  }
+  byte = snprintf(s_value_str, P_VALUE_MAX, "%d", value);
+
+  if (-1 == write(fd, s_value_str, byte)) {
+    fprintf(stderr, "Failed to write value in period!\n");
+    close(fd);
+    return -1;
+  }
+  close(fd);
+
+  return (0);
+}
+
+static int PWMWriteDutyCycle(int pwmnum, int value) {
+  char s_value_str[P_VALUE_MAX];
+  char path[P_VALUE_MAX];
+  int fd, byte;
+
+  // TODO: Enter the duty_cycle path.
+  snprintf(path, P_VALUE_MAX, "/sys/class/pwm/pwmchip0/pwm0/duty_cycle", pwmnum);
+  fd = open(path, O_WRONLY);
+  if (-1 == fd) {
+    fprintf(stderr, "Failed to open in duty cycle!\n");
+    return (-1);
+  }
+  byte = snprintf(s_value_str, P_VALUE_MAX, "%d", value);
+
+  if (-1 == write(fd, s_value_str, byte)) {
+    fprintf(stderr, "Failed to write value in duty cycle!\n");
+    close(fd);
+    return -1;
+  }
+  close(fd);
+
+  return (0);
+}
 static int GPIOExport(int pin) {
 #define BUFFER_MAX 3
   char buffer[BUFFER_MAX];
@@ -132,6 +223,10 @@ void error_handling(char *message) {
   exit(1);
 }
 void* get_error_code(void *arg){
+  PWMExport(SOUND);
+  PWMWritePeriod(SOUND, 10000000);
+  PWMWriteDutyCycle(SOUND, 0);
+  PWMEnable(SOUND);
   int sock = *(int *)arg;
   int str_len;
   char msg[2];
@@ -150,19 +245,19 @@ void* get_error_code(void *arg){
     if (str_len == -1) error_handling("read() error");
     if(error == '0'){
       printf("error 1\n");
-      GPIOWrite(SOUND, 1);
+      PWMWriteDutyCycle(SOUND, 10000000);
       usleep(2000 * 1000);
-      GPIOWrite(SOUND, 0);
+      PWMWriteDutyCycle(SOUND, 0);
     }
     if(error == '1'){
       printf("error 2\n");
-      GPIOWrite(SOUND, 1);
+      PWMWriteDutyCycle(SOUND, 10000000);
       usleep(1000 * 2000);
-      GPIOWrite(SOUND, 0);
+      PWMWriteDutyCycle(SOUND, 0);
       usleep(1000 * 1000);
-      GPIOWrite(SOUND, 1);
+      PWMWriteDutyCycle(SOUND, 10000000);
       usleep(1000 * 2000);
-      GPIOWrite(SOUND, 0);            
+      PWMWriteDutyCycle(SOUND, 0);         
     }  
   }
 }
