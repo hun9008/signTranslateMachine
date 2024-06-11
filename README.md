@@ -2,7 +2,7 @@
 
 ```
 // glove
-gcc -o glove glove.c -lbcm2835
+gcc -o glove glove.c -lbcm2835 -lpthread
 ```
 
 ```
